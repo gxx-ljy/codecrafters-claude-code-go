@@ -31,6 +31,15 @@ func main() {
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
+	messages := []openai.ChatCompletionMessageParamUnion{
+		{
+			OfUser: &openai.ChatCompletionUserMessageParam{
+				Content: openai.ChatCompletionUserMessageParamContentUnion{
+					OfString: openai.String(prompt),
+				},
+			},
+		},
+	}
 
 	// 定义tools
 	tools:= []openai.ChatCompletionToolUnionParam{
@@ -49,62 +58,87 @@ func main() {
 			},
 		}),
 	}
-
-	resp, err := client.Chat.Completions.New(context.Background(),
-		openai.ChatCompletionNewParams{
-			Model: "anthropic/claude-haiku-4.5",
-			Messages: []openai.ChatCompletionMessageParamUnion{
-				{
-					OfUser: &openai.ChatCompletionUserMessageParam{
-						Content: openai.ChatCompletionUserMessageParamContentUnion{
-							OfString: openai.String(prompt),
-						},
-					},
-				},
+	for {
+		resp, err := client.Chat.Completions.New(context.Background(),
+			openai.ChatCompletionNewParams{
+				Model: "anthropic/claude-haiku-4.5",
+				Messages: messages,
+				Tools: tools,
 			},
-			Tools: tools,
-		},
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	if len(resp.Choices) == 0 {
-		panic("No choices in response")
-	}
-
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-
-	// 处理tool calls
-	if len(resp.Choices[0].Message.ToolCalls) > 0 {
-		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-			// 解析函数参数
-			var args map[string]interface{}
-			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-				fmt.Fprintf(os.Stderr, "error parsing tool arguments: %v\n", err)
-				continue
-			}
-
-			if toolCall.Function.Name == "Read" {
-				// 获取file_path参数
-				filePath, ok := args["file_path"].(string)
-				if !ok {
-					fmt.Fprintln(os.Stderr, "file_path argument is not a string")
-					continue
-				}
-
-				// 读取文件并输出内容
-				content, err := os.ReadFile(filePath)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
-					continue
-				}
-				fmt.Print(string(content))
-			}
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
 		}
-	} else {
-		// 如果没有tool calls，直接输出内容
-		fmt.Print(resp.Choices[0].Message.Content)
+		if len(resp.Choices) == 0 {
+			panic("No choices in response")
+		}
+
+		// You can use print statements as follows for debugging, they'll be visible when running tests.
+		fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
+
+		// 处理tool calls
+		if len(resp.Choices[0].Message.ToolCalls) > 0 {
+			// 构建 assistant message
+			content := chat.Choices[0].Message.Content
+
+			// 构建 tool_calls 列表
+			toolCalls := make([]ToolCall, 0, len(toolCalls))
+			for _, tc := range toolCalls {
+				toolCalls = append(toolCalls, ToolCall{
+					ID:   tc.ID,
+					Type: "function",
+					Function: Function{
+						Name:      tc.Function.Name,
+						Arguments: tc.Function.Arguments,
+					},
+				})
+			}
+
+			// 构建 assistant message
+			assistantMessage := Message{
+				Role:      "assistant",
+				Content:   content,
+				ToolCalls: toolCalls,
+			}
+
+			// 添加到 messages 切片
+			messages = append(messages, assistantMessage)
+
+			for _, toolCall := range resp.Choices[0].Message.ToolCalls {
+				// 解析函数参数
+				var args map[string]interface{}
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+					fmt.Fprintf(os.Stderr, "error parsing tool arguments: %v\n", err)
+					continue
+				}
+
+				if toolCall.Function.Name == "Read" {
+					// 获取file_path参数
+					filePath, ok := args["file_path"].(string)
+					if !ok {
+						fmt.Fprintln(os.Stderr, "file_path argument is not a string")
+						continue
+					}
+
+					// 读取文件并输出内容
+					content, err := os.ReadFile(filePath)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
+						continue
+					}
+					// fmt.Print(string(content))
+					toolMessage := Message{
+						Role:      "tool",
+						tool_call_id:         toolCall.ID,
+						Content:   content,
+					}
+					messages = append(messages, toolMessage)
+				}
+			}
+		} else {
+			// 如果没有tool calls，直接输出内容
+			fmt.Print(resp.Choices[0].Message.Content)
+		}
 	}
 }
