@@ -79,12 +79,15 @@ func main() {
 
 		// 处理tool calls
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
-
+			toolCalls := make([]openai.ChatCompletionMessageToolCallUnionParam, len(resp.Choices[0].Message.ToolCalls))
+			for i, tc := range resp.Choices[0].Message.ToolCalls {
+				toolCalls[i] = tc
+			}
 			// 添加到 messages 切片
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
 				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					Content: openai.Nil[string](),
-					ToolCalls: resp.Choices[0].Message.ToolCalls,
+					Content: nil,
+					ToolCalls: toolCalls,
 				},
 			})
 
@@ -111,7 +114,7 @@ func main() {
 						continue
 					}
 					// fmt.Print(string(content))
-					messages = append(messages, openai.ChatCompletionMessageParamUnion{
+					messages = append(messages, openai.ChatCompletionToolMessageParamContentUnion{
 						OfTool: &openai.ChatCompletionToolMessageParam{
 							ToolCallID: toolCall.ID,
 							Content: string(content),
