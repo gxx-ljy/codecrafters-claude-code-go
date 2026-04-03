@@ -27,12 +27,12 @@ func main() {
 	}
 
 	if apiKey == "" {
-		panic("Env variable OPENROUTER_API_KEY not set")
+		panic("Env variable OPENROUTER_API_KEY not found")
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
-	// Define the Read tool
+	// 定义tools
 	tools := []openai.ChatCompletionToolParam{
 		{
 			Function: openai.FunctionDefinitionParam{
@@ -72,30 +72,31 @@ func main() {
 		os.Exit(1)
 	}
 	if len(resp.Choices) == 0 {
-		panic("no choices in response")
+		panic("No choices in response")
 	}
 
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
-	// Handle tool calls
+	// 处理tool calls
 	if len(resp.Choices[0].Message.ToolCalls) > 0 {
-		for _, tc := range resp.Choices[0].Message.ToolCalls {
-			// Parse the function arguments
+		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
+			// 解析函数参数
 			var args map[string]interface{}
-			if err := json.Unmarshal([]byte(tc.Function.Arguments), &args); err != nil {
-				fmt.Fprintf(os.Stderr, "error parsing arguments: %v\n", err)
+			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+				fmt.Fprintf(os.Stderr, "error parsing tool arguments: %v\n", err)
 				continue
 			}
 
-			if tc.Function.Name == "Read" {
+			if toolCall.Function.Name == "Read" {
+				// 获取file_path参数
 				filePath, ok := args["file_path"].(string)
 				if !ok {
-					fmt.Fprintln(os.Stderr, "error: file_path not found or not a string")
+					fmt.Fprintln(os.Stderr, "file_path argument is not a string")
 					continue
 				}
 
-				// Read and print the file contents
+				// 读取文件并输出内容
 				content, err := os.ReadFile(filePath)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
@@ -105,6 +106,7 @@ func main() {
 			}
 		}
 	} else {
+		// 如果没有tool calls，直接输出内容
 		fmt.Print(resp.Choices[0].Message.Content)
 	}
 }
