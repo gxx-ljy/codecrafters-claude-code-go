@@ -79,27 +79,13 @@ func main() {
 
 		// 处理tool calls
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
-			// 构建 assistant message
-			content := chat.Choices[0].Message.Content
-
-			// 构建 tool_calls 列表
-			toolCalls := make([]ToolCall, 0, len(toolCalls))
-			for _, tc := range toolCalls {
-				toolCalls = append(toolCalls, ToolCall{
-					ID:   tc.ID,
-					Type: "function",
-					Function: Function{
-						Name:      tc.Function.Name,
-						Arguments: tc.Function.Arguments,
-					},
-				})
-			}
 
 			// 构建 assistant message
-			assistantMessage := Message{
-				Role:      "assistant",
-				Content:   content,
-				ToolCalls: toolCalls,
+			assistantMessage := openai.ChatCompletionToolMessageParam{
+				OfAssistant: &openai.ChatCompletionToolMessageAssistantParam{
+					Content: openai.String(content),
+					ToolCalls: toolCalls,
+				},
 			}
 
 			// 添加到 messages 切片
@@ -128,10 +114,11 @@ func main() {
 						continue
 					}
 					// fmt.Print(string(content))
-					toolMessage := Message{
-						Role:      "tool",
-						tool_call_id:         toolCall.ID,
-						Content:   content,
+					toolMessage := openai.ChatCompletionToolMessageParam{
+						OfTool: &openai.ChatCompletionToolMessageToolParam{
+							ToolCallID: openai.String(toolCall.ID),
+							Content: openai.String(string(content)),
+						},
 					}
 					messages = append(messages, toolMessage)
 				}
@@ -139,6 +126,7 @@ func main() {
 		} else {
 			// 如果没有tool calls，直接输出内容
 			fmt.Print(resp.Choices[0].Message.Content)
+			os.Exit(0)
 		}
 	}
 }
