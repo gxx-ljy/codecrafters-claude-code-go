@@ -119,7 +119,7 @@ func main() {
 		} else {
 			// 如果没有tool calls，直接输出内容
 			fmt.Print(resp.Choices[0].Message.Content)
-			os.Exit(0)
+			return
 		}
 	}
 }
