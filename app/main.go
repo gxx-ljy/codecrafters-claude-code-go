@@ -66,11 +66,16 @@ func main() {
 				"properties": map[string]any{
 					"file_path": map[string]any{
 						"type":        "string",
-						"description": "The path to the file to write",
-					}
-				}
-			}
-		})
+						"description": "The path of the file to write to",
+					},
+					"content": map[string]any{
+						"type":        "string",
+						"description": "The content to write to the file",
+					},
+				},
+				"required": []string{"file_path", "content"},
+			},
+		}),
 	}
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
