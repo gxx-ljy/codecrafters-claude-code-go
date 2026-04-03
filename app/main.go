@@ -85,8 +85,8 @@ func main() {
 			}
 			// 添加到 messages 切片
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					Content: openai.Nullable[string](),
+				OfAssistant: &openai.ChatCompletionMessageToolCallUnionParam{
+					Content: openai.Nil[string](),
 					ToolCalls: toolCalls,
 				},
 			})
@@ -118,7 +118,7 @@ func main() {
 						OfTool: &openai.ChatCompletionToolMessageParam{
 							ToolCallID: toolCall.ID,
 							Content: openai.ChatCompletionToolMessageParamContentUnion{
-								OfString: openai.String(string(content)),
+								OfString: openai.String(content),
 							},
 						},
 					})
