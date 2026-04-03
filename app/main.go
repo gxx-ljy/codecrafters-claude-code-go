@@ -79,26 +79,8 @@ func main() {
 
 		// 处理tool calls
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
-			// 转换 tool calls
-			var toolCalls []openai.ChatCompletionMessageToolCallUnionParam
-			for _, tc := range resp.Choices[0].Message.ToolCalls {
-				toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallUnionParam{
-					OfFunction: &openai.ChatCompletionFunctionCallParam{
-						ID:   tc.ID,
-						Type: tc.Type,
-						Function: &openai.ChatCompletionFunctionCallParamFunction{
-							Name:      tc.Function.Name,
-							Arguments: tc.Function.Arguments,
-						},
-					},
-				})
-			}
-
-			messages = append(messages, openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					ToolCalls: toolCalls,
-				},
-			})
+			choice := resp.Choices[0]
+			messages = append(messages, choice.Message.ToParam())
 
 			for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 				// 解析函数参数
