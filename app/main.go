@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -187,6 +188,21 @@ func main() {
 
 					// 执行命令并获取输出
 					output, err := exec.Command("bash", "-c", command).Output()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error executing command: %v\n", err)
+						continue
+					}
+					// fmt.Print(string(output))
+
+					// 将工具响应添加到消息中
+					messages = append(messages, openai.ChatCompletionMessageParamUnion{
+						OfTool: &openai.ChatCompletionToolMessageParam{
+							ToolCallID: toolCall.ID,
+							Content:    openai.ChatCompletionToolMessageParamContentUnion{
+								OfString: openai.String(string(output)),
+							},
+						},
+					})
 				}
 			}
 		} else {
