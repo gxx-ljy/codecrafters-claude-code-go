@@ -33,7 +33,7 @@ func main() {
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
 	// 定义tools
-	tools: []openai.ChatCompletionToolUnionParam{
+	tools:= []openai.ChatCompletionToolUnionParam{
 		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
 			Name:        "Read",
 			Description: openai.String("Read and return the contents of a file"),
