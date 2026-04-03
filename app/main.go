@@ -82,7 +82,7 @@ func main() {
 			// 直接添加 assistant 消息
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
 				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					ToolCalls: resp.Choices[0].Message.ToolCalls,
+					ToolCalls: openai.WithAssistantMessageToolCalls(resp.Choices[0].Message.ToolCalls),
 				},
 			})
 
@@ -113,7 +113,7 @@ func main() {
 					messages = append(messages, openai.ChatCompletionMessageParamUnion{
 						OfTool: &openai.ChatCompletionToolMessageParam{
 							ToolCallID: toolCall.ID,
-							Content:    openai.String(content),
+							Content:    openai.ChatCompletionToolMessageParamContentUnionOfString(content),
 						},
 					})
 				}
