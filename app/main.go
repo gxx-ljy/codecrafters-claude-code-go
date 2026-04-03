@@ -79,25 +79,10 @@ func main() {
 
 		// 处理tool calls
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
-			// 创建新的 ToolCall 对象用于 Assistant 消息
-			var assistantToolCalls []openai.ChatCompletionMessageToolCallUnionParam
-			
-			for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-				// 将返回的 ToolCall 转换为参数所需的类型
-				assistantToolCalls = append(assistantToolCalls, openai.ChatCompletionMessageToolCallUnionParam{
-					ID:   toolCall.ID,
-					Type: toolCall.Type,
-					Function: openai.FunctionCallParam{
-						Name:      toolCall.Function.Name,
-						Arguments: toolCall.Function.Arguments,
-					},
-				})
-			}
-			
-			// 添加 assistant 消息
+			// 直接添加 assistant 消息
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
 				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
-					ToolCalls: assistantToolCalls,
+					ToolCalls: resp.Choices[0].Message.ToolCalls,
 				},
 			})
 
