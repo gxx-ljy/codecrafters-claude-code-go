@@ -9,8 +9,6 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
-	"golang.org/x/text/message"
-	"k8s.io/kube-openapi/cmd/openapi-gen/args"
 )
 
 func main() {
