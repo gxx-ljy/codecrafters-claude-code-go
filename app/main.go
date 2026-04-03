@@ -81,15 +81,17 @@ func main() {
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
 
 			// 构建 assistant message
-			assistantMessage := openai.ChatCompletionToolMessageParam{
-				OfAssistant: &openai.ChatCompletionToolMessageAssistantParam{
-					Content: openai.String(content),
-					ToolCalls: toolCalls,
+			assistantMessage := openai.ChatCompletionAssistantMessageParam{
+				OfAssistant: &openai.ChatCompletionAssistantMessageParamContentUnion{
+					Content: openai.String(""),
+					ToolCalls: resp.Choices[0].Message.ToolCalls,
 				},
 			}
 
 			// 添加到 messages 切片
-			messages = append(messages, assistantMessage)
+			messages = append(messages, openai.ChatCompletionMessageParamUnion{
+				OfAssistant: &assistantMessage,
+			})
 
 			for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 				// 解析函数参数
@@ -115,12 +117,12 @@ func main() {
 					}
 					// fmt.Print(string(content))
 					toolMessage := openai.ChatCompletionToolMessageParam{
-						OfTool: &openai.ChatCompletionToolMessageToolParam{
 							ToolCallID: openai.String(toolCall.ID),
 							Content: openai.String(string(content)),
-						},
 					}
-					messages = append(messages, toolMessage)
+					messages = append(messages, openai.ChatCompletionMessageParamUnion{
+						OfTool: &toolMessage,
+					})
 				}
 			}
 		} else {
