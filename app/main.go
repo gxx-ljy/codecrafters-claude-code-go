@@ -10,6 +10,7 @@ import (
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"golang.org/x/text/message"
+	"k8s.io/kube-openapi/cmd/openapi-gen/args"
 )
 
 func main() {
@@ -143,7 +144,7 @@ func main() {
 					}
 
 					// 获取工具响应内容
-					content, ok := choice.Message.ToolCalls[0].Output.Content.(string)
+					content, ok := args["content"].(string)
 					if !ok {
 						fmt.Fprintln(os.Stderr, "tool output content is not a string")
 						continue
