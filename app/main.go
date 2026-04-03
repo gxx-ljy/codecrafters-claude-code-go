@@ -33,23 +33,21 @@ func main() {
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
 	// 定义tools
-	tools := []openai.ChatCompletionToolParam{
-		{
-			Function: openai.FunctionDefinitionParam{
-				Name:        openai.String("Read"),
-				Description: openai.String("Read and return the contents of a file"),
-				Parameters: openai.FunctionParameters{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"file_path": map[string]interface{}{
-							"type":        "string",
-							"description": "The path to the file to read",
-						},
+	tools: []openai.ChatCompletionToolUnionParam{
+		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+			Name:        "Read",
+			Description: openai.String("Read and return the contents of a file"),
+			Parameters: openai.FunctionParameters{
+				"type": "object",
+				"properties": map[string]any{
+					"file_path": map[string]any{
+						"type":        "string",
+						"description": "The path to the file to read",
 					},
-					"required": []string{"file_path"},
 				},
+				"required": []string{"file_path"},
 			},
-		},
+		}),
 	}
 
 	resp, err := client.Chat.Completions.New(context.Background(),
