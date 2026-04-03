@@ -9,6 +9,7 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
+	"golang.org/x/text/message"
 )
 
 func main() {
@@ -57,6 +58,19 @@ func main() {
 				"required": []string{"file_path"},
 			},
 		}),
+		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+			Name:        "Write",
+			Description: openai.String("Write a file"),
+			Parameters: openai.FunctionParameters{
+				"type": "object",
+				"properties": map[string]any{
+					"file_path": map[string]any{
+						"type":        "string",
+						"description": "The path to the file to write",
+					}
+				}
+			}
+		})
 	}
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
@@ -111,6 +125,36 @@ func main() {
 							ToolCallID: toolCall.ID,
 							Content:    openai.ChatCompletionToolMessageParamContentUnion{
 								OfString: openai.String(string(content)),
+							},
+						},
+					})
+				}
+				if toolCall.Function.Name == "Write" {
+					// 获取file_path参数
+					filePath, ok := args["file_path"].(string)
+					if !ok {
+						fmt.Fprintln(os.Stderr, "file_path argument is not a string")
+						continue
+					}
+
+					// 获取工具响应内容
+					content, ok := choice.Message.ToolCalls[0].Output.Content.(string)
+					if !ok {
+						fmt.Fprintln(os.Stderr, "tool output content is not a string")
+						continue
+					}
+					// 写入文件
+					err := os.WriteFile(filePath, []byte(content), 0644)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error writing file: %v\n", err)
+						continue
+					}
+
+					messages = append(messages, openai.ChatCompletionMessageParamUnion{
+						OfTool: &openai.ChatCompletionToolMessageParam{
+							ToolCallID: toolCall.ID,
+							Content:    openai.ChatCompletionToolMessageParamContentUnion{
+								OfString: openai.String("OK"),
 							},
 						},
 					})
