@@ -75,6 +75,20 @@ func main() {
 				"required": []string{"file_path", "content"},
 			},
 		}),
+		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
+			Name:        "Bash",
+			Description: openai.String("Execute a bash command"),
+			Parameters: openai.FunctionParameters{
+				"type": "object",
+				"properties": map[string]any{
+					"command": map[string]any{
+						"type":        "string",
+						"description": "The bash command to execute",
+					},
+				},
+				"required": []string{"command"},
+			},
+		}),
 	}
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
@@ -162,6 +176,17 @@ func main() {
 							},
 						},
 					})
+				}
+				if toolCall.Function.Name == "Bash" {
+					// 获取command参数
+					command, ok := args["command"].(string)
+					if !ok {
+						fmt.Fprintln(os.Stderr, "command argument is not a string")
+						continue
+					}
+
+					// 执行命令并获取输出
+					output, err := exec.Command("bash", "-c", command).Output()
 				}
 			}
 		} else {
