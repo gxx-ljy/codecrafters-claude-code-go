@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// 定义tools
-	tools:= []openai.ChatCompletionToolUnionParam{
+	tools := []openai.ChatCompletionToolUnionParam{
 		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
 			Name:        "Read",
 			Description: openai.String("Read and return the contents of a file"),
@@ -79,15 +79,10 @@ func main() {
 
 		// 处理tool calls
 		if len(resp.Choices[0].Message.ToolCalls) > 0 {
-			toolCalls := make([]openai.ChatCompletionMessageToolCallUnionParam, len(resp.Choices[0].Message.ToolCalls))
-			for i, tc := range resp.Choices[0].Message.ToolCalls {
-				toolCalls[i] = tc
-			}
-			// 添加到 messages 切片
+			// 直接添加 assistant 消息
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
-				OfAssistant: &openai.ChatCompletionMessageToolCallUnionParam{
-					Content: openai.Nil[string](),
-					ToolCalls: toolCalls,
+				OfAssistant: &openai.ChatCompletionAssistantMessageParam{
+					ToolCalls: resp.Choices[0].Message.ToolCalls,
 				},
 			})
 
@@ -114,12 +109,11 @@ func main() {
 						continue
 					}
 					// fmt.Print(string(content))
-					messages = append(messages, openai.ChatCompletionToolMessageParamContentUnion{
+					// 将工具响应添加到消息中
+					messages = append(messages, openai.ChatCompletionMessageParamUnion{
 						OfTool: &openai.ChatCompletionToolMessageParam{
 							ToolCallID: toolCall.ID,
-							Content: openai.ChatCompletionToolMessageParamContentUnion{
-								OfString: openai.String(content),
-							},
+							Content:    openai.String(string(content)),
 						},
 					})
 				}
