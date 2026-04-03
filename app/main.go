@@ -83,10 +83,10 @@ func main() {
 			var toolCalls []openai.ChatCompletionMessageToolCallUnionParam
 			for _, tc := range resp.Choices[0].Message.ToolCalls {
 				toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallUnionParam{
-					OfFunction: &openai.ChatCompletionFunctionToolCallParam{
+					OfFunction: &openai.ChatCompletionFunctionToolCalls{
 						ID:   tc.ID,
 						Type: tc.Type,
-						Function: &openai.ChatCompletionFunctionToolCallParamFunction{
+						Function: &openai.ChatCompletionFunctionToolCalls{
 							Name:      tc.Function.Name,
 							Arguments: tc.Function.Arguments,
 						},
